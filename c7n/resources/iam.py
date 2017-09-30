@@ -617,8 +617,11 @@ class CredentialReport(Filter):
         for p, t in cls.list_sub_objects:
             obj = dict([(k[len(p):], info.pop(k))
                         for k in keys if k.startswith(p)])
-            if obj.get('active', False):
-                info.setdefault(t, []).append(obj)
+
+            if not obj.get('active') and obj.get('last_rotated') is None:
+                continue # Skip access keys and certs that don't exist
+
+            info.setdefault(t, []).append(obj)
         return info
 
     def fetch_credential_report(self):
