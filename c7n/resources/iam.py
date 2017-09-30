@@ -1016,7 +1016,11 @@ class UserRemoveAccessKey(BaseAction):
     """
 
     schema = type_schema(
-        'remove-keys', age={'type': 'number'}, last_used={'type': 'number'}, disable={'type': 'boolean'})
+        'remove-keys',
+        age={'type': 'number'},
+        last_used={'type': 'number'},
+        disable={'type': 'boolean'},
+    )
     permissions = ('iam:ListAccessKeys', 'iam:UpdateAccessKey',
                    'iam:DeleteAccessKey')
 
@@ -1048,7 +1052,8 @@ class UserRemoveAccessKey(BaseAction):
                         AccessKeyId=k['AccessKeyId'],
                     )['AccessKeyLastUsed']
 
-                    # Check on the last used timestamp, default to when it was created if it hasn't ever been used
+                    # Check on the last used timestamp, default to when it was
+                    # created if it hasn't ever been used.
                     last_used_date = access_key_usage.get('LastUsedDate', k['CreateDate'])
                     if last_used_date > last_used_threshold_date:
                         continue
