@@ -994,18 +994,29 @@ class UserRemoveAccessKey(BaseAction):
 
     .. code-block:: yaml
 
-     - name: iam-mfa-active-keys-no-login
+     - name: iam-delete-inactive-keys
        resource: iam-user
        actions:
          - type: remove-keys
            disable: true
-           age: 90
+           last_used: 90
          - type: remove-keys
-           age: 180
+           last_used: 180
+
+    Alternatively if we wanted to force users to rotate their keys every
+    90 days:
+
+    .. code-block: yaml
+
+     - name: iam-key-rotation-policy
+       resource: iam-user
+       actions:
+         - type: remove-keys
+           age: 90
     """
 
     schema = type_schema(
-        'remove-keys', age={'type': 'number'}, disable={'type': 'boolean'})
+        'remove-keys', age={'type': 'number'}, last_used={'type': 'number'}, disable={'type': 'boolean'})
     permissions = ('iam:ListAccessKeys', 'iam:UpdateAccessKey',
                    'iam:DeleteAccessKey')
 
@@ -1013,10 +1024,13 @@ class UserRemoveAccessKey(BaseAction):
         client = local_session(self.manager.session_factory).client('iam')
 
         age = self.data.get('age')
+        last_used = self.data.get('last_used')
         disable = self.data.get('disable')
 
         if age:
-            threshold_date = datetime.datetime.now(tz=tzutc()) - timedelta(age)
+            age_threshold_date = datetime.datetime.now(tz=tzutc()) - timedelta(age)
+        if last_used:
+            last_used_threshold_date = datetime.datetime.now(tz=tzutc()) - timedelta(last_used)
 
         for r in resources:
             if 'c7n:AccessKeys' not in r:
@@ -1025,8 +1039,20 @@ class UserRemoveAccessKey(BaseAction):
             keys = r['c7n:AccessKeys']
             for k in keys:
                 if age:
-                    if not k['CreateDate'] < threshold_date:
+                    age_date = k['CreateDate']
+                    if age_date > age_threshold_date:
                         continue
+
+                if last_used:
+                    access_key_usage = client.get_access_key_last_used(
+                        AccessKeyId=k['AccessKeyId'],
+                    )['AccessKeyLastUsed']
+
+                    # Check on the last used timestamp, default to when it was created if it hasn't ever been used
+                    last_used_date = access_key_usage.get('LastUsedDate', k['CreateDate'])
+                    if last_used_date > last_used_threshold_date:
+                        continue
+
                 if disable:
                     client.update_access_key(
                         UserName=r['UserName'],
