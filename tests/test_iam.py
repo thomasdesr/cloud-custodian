@@ -204,7 +204,34 @@ class IamUserTest(BaseTest):
         self.assertEqual(len(resources), 1)
         users = client.list_users(PathPrefix="/test/").get('Users', [])
         self.assertEqual(users, [])
+
+    @functional
+    def test_iam_user_forced_delete(self):
+        factory = self.replay_flight_data('test_iam_user_forced_delete')
+        client = factory().client('iam')
+
+        name = 'alice'
+        client.create_user(UserName=name, Path="/test/")
+
+        p = self.load_policy(
+            {
+                'name': 'iam-user-delete',
+                'resource': 'iam-user',
+                'filters': [{'UserName': name }],
+                'actions': [{
+                    'type': 'delete',
+                    'force': True,
+                }],
+            },
+            session_factory=factory,
+        )
+
+        resources = p.run()
+        self.assertEqual(len(resources), 1)
+        users = client.list_users(PathPrefix="/test/").get('Users', [])
+        self.assertEqual(users, [])
         
+
     def test_iam_user_policy(self):
         session_factory = self.replay_flight_data(
             'test_iam_user_admin_policy')

@@ -821,7 +821,6 @@ class UserMfaDevice(ValueFilter):
 
         return matched
 
-
 @User.action_registry.register('delete')
 class UserDelete(BaseAction):
     """Delete a user.
@@ -879,14 +878,84 @@ class UserDelete(BaseAction):
             - delete
 
     """
-    schema = type_schema('delete')
-    permissions = ('iam:DeleteUser',)
+    schema = type_schema('delete', force={'type': 'boolean'})
+    permissions = (
+        # Confirm the user exists
+        'iam:GetUser',
+
+        # List all its subordinate resources
+        'iam:ListAccessKeys',
+        'iam:ListUserPolicies',
+        'iam:ListGroupsForUser',
+        'iam:ListAttachedUserPolicies',
+
+        # Delete any subordinate resources
+        'iam:DeleteAccessKey',
+        'iam:DeleteUserPolicy',
+        'iam:DetachuserPolicy',
+
+        # Finally, delete the user
+        'iam:DeleteUser',
+    )
+
+    @staticmethod
+    def list_access_keys(client, username):
+        resp = client.list_access_keys(UserName=username)
+        for ak in resp['AccessKeyMetadata']:
+            yield ak['AccessKeyId']
+
+    @staticmethod
+    def list_user_policies(client, username):
+        resp = client.list_user_policies(UserName=username)
+        for pn in resp['PolicyNames']:
+            yield pn
+
+    @staticmethod
+    def list_user_groups(client, username):
+        resp = client.list_groups_for_user(UserName=username)
+        for grp in resp['Groups']:
+            yield grp['GroupName']
+
+    @staticmethod
+    def list_attached_policies(client, username):
+        resp = client.list_attached_user_policies(UserName=username)
+        for pa in resp['AttachedPolicies']:
+            yield pa['PolicyArn']
+
+    def force_delete_user(self, client, username):
+        try:
+            client.get_user(UserName=username)
+        except Exception:
+            return username, True
+
+        for ak in self.list_access_keys(client, username):
+            client.delete_access_key(UserName=username, AccessKeyId=ak)
+
+        for pn in self.list_user_policies(client, username):
+            client.delete_user_policy(UserName=username, PolicyName=pn)
+
+        for pa in self.list_attached_policies(client, username):
+            client.detach_user_policy(UserName=username, PolicyArn=pa)
+
+        for gn in self.list_user_groups(client, username):
+            client.remove_user_from_group(UserName=username, GroupName=gn)
+
+        return username, client.delete_user(UserName=username)
 
     def process(self, resources):
         client = local_session(self.manager.session_factory).client('iam')
+
+        # TODO(pre-merge) Maybe we should call this cascade to mirror database cascades?
+        force = self.data.get('force')
+
         for r in resources:
-            client.delete_user(UserName=r['UserName'])
-        self.log.debug('Deleted user "%s"' % (r['UserName']))
+            if force:
+                self.log.debug('Force deleting user "%s"', r['UserName'])
+                self.force_delete_user(client, r['UserName'])
+            else:
+                self.log.debug('Deleted user "%s"', r['UserName'])
+                client.delete_user(UserName=r['UserName'])
+
 
 
 @User.action_registry.register('remove-keys')

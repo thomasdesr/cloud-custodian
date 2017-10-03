@@ -1,0 +1,32 @@
+{
+    "status_code": 200,
+    "data": {
+        "User": {
+            "Path": "/test/",
+            "UserName": "alice",
+            "UserId": "AIDAJVXNX6URXHWUU4EXK",
+            "Arn": "arn:aws:iam::1234567890:user/test/alice",
+            "CreateDate": {
+                "__class__": "datetime",
+                "year": 2017,
+                "month": 10,
+                "day": 3,
+                "hour": 21,
+                "minute": 48,
+                "second": 12,
+                "microsecond": 0
+            }
+        },
+        "ResponseMetadata": {
+            "RequestId": "8e72633b-a884-11e7-afb8-bbe194fb2bc8",
+            "HTTPStatusCode": 200,
+            "HTTPHeaders": {
+                "x-amzn-requestid": "8e72633b-a884-11e7-afb8-bbe194fb2bc8",
+                "content-type": "text/xml",
+                "content-length": "469",
+                "date": "Tue, 03 Oct 2017 21:48:13 GMT"
+            },
+            "RetryAttempts": 0
+        }
+    }
+}
