@@ -619,7 +619,7 @@ class CredentialReport(Filter):
                         for k in keys if k.startswith(p)])
 
             if not obj.get('active') and obj.get('last_rotated') is None:
-                continue # Skip access keys and certs that don't exist
+                continue  # Skip access keys and certs that don't exist
 
             info.setdefault(t, []).append(obj)
         return info
