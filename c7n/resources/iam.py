@@ -821,6 +821,7 @@ class UserMfaDevice(ValueFilter):
 
         return matched
 
+
 @User.action_registry.register('delete')
 class UserDelete(BaseAction):
     """Delete a user.
@@ -955,7 +956,6 @@ class UserDelete(BaseAction):
             else:
                 self.log.debug('Deleted user "%s"', r['UserName'])
                 client.delete_user(UserName=r['UserName'])
-
 
 
 @User.action_registry.register('remove-keys')
