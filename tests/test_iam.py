@@ -230,7 +230,6 @@ class IamUserTest(BaseTest):
         self.assertEqual(len(resources), 1)
         users = client.list_users(PathPrefix="/test/").get('Users', [])
         self.assertEqual(users, [])
-        
 
     def test_iam_user_policy(self):
         session_factory = self.replay_flight_data(
