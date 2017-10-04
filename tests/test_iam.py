@@ -206,8 +206,8 @@ class IamUserTest(BaseTest):
         self.assertEqual(users, [])
 
     @functional
-    def test_iam_user_forced_delete(self):
-        factory = self.replay_flight_data('test_iam_user_forced_delete')
+    def test_iam_user_delete_forced(self):
+        factory = self.replay_flight_data('test_iam_user_delete_forced')
         client = factory().client('iam')
 
         name = 'alice'
