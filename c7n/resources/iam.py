@@ -1022,7 +1022,7 @@ class UserRemoveAccessKey(BaseAction):
         disable={'type': 'boolean'},
     )
     permissions = ('iam:ListAccessKeys', 'iam:UpdateAccessKey',
-                   'iam:DeleteAccessKey')
+                   'iam:DeleteAccessKey', 'iam:GetAccessKeyLastUsed')
 
     def process(self, resources):
         client = local_session(self.manager.session_factory).client('iam')
